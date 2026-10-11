@@ -218,3 +218,32 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- MGT project -----------------------------------------------------------
+# Local agent / editor tooling
+.claude/
+.clinerules/
+.aider*
+.zcode/
+
+# Runtime data (lives in %LOCALAPPDATA%\MGT or ~/.local/share/mgt)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite3
+
+# Logs and scratch
+logs/
+*.log.*
+tmp/
+scratch/
+
+# Packaging leftovers
+*.egg-info/
+.venv/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini

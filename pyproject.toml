@@ -1,0 +1,17 @@
+[project]
+name = "mgt"
+version = "0.2.0"
+description = "Minimalist Goal Tracker: horizon goals, read-only desktop overlay, Pomodoro"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["pyqt6>=6.7"]
+
+[project.optional-dependencies]
+toast = ["win11toast>=0.36.3; sys_platform == 'win32'"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
