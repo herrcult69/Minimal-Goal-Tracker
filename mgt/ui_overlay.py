@@ -191,9 +191,9 @@ class OverlayWidget(QWidget):
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(6)
 
-        title = QLabel(datetime.now().strftime("%a, %b %d"), header)
-        title.setObjectName("Title")
-        row.addWidget(title)
+        self._date_label = QLabel(datetime.now().strftime("%a, %b %d"), header)
+        self._date_label.setObjectName("Title")
+        row.addWidget(self._date_label)
         row.addStretch(1)
 
         self._time_label = QLabel(format_seconds(self._controller.remaining_seconds), header)
@@ -381,7 +381,7 @@ class OverlayWidget(QWidget):
         """Called when badge timer fires."""
         self._refresh_badges()
         # Update header date in case midnight passed
-        self._build_header()
+        self._date_label.setText(datetime.now().strftime("%a, %b %d"))
         if self.isVisible():
             self._arm_badge_timer()
 
@@ -445,9 +445,6 @@ class OverlayWidget(QWidget):
         if not self._position_restored:
             self._position_restored = True
             self.restore_position()
-        self._sync_mini_bar()
-        self._apply_content(force=True)
-        super().showEvent(event)
 
     def mousePressEvent(self, event) -> None:  # noqa: N802
         if event.button() == Qt.MouseButton.LeftButton:

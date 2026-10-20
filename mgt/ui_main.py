@@ -699,6 +699,12 @@ class MainWindow(QWidget):
         self._break_spin.setValue(self._controller.break_duration_minutes)
         form.addWidget(self._labelled("Break minutes", self._break_spin, card))
 
+        self._auto_start_cb = QCheckBox("Auto-start next phase (Focus ⇄ Break)", card)
+        self._auto_start_cb.setChecked(
+            self._store.setting("pomodoro_auto_start") == "1"
+        )
+        form.addWidget(self._auto_start_cb)
+
         self._overlay_cb = QCheckBox("Show overlay", card)
         self._overlay_cb.setChecked(self._store.setting("overlay_enabled") == "1")
         form.addWidget(self._overlay_cb)
@@ -791,6 +797,10 @@ class MainWindow(QWidget):
         self._store.set_setting("pomodoro_focus_min", str(focus))
         self._store.set_setting("pomodoro_break_min", str(breaks))
         self._controller.update_durations(focus, breaks)
+
+        auto_start = self._auto_start_cb.isChecked()
+        self._store.set_setting("pomodoro_auto_start", "1" if auto_start else "0")
+        self._controller.auto_start = auto_start
 
         self._store.set_setting("overlay_enabled", "1" if self._overlay_cb.isChecked() else "0")
         self._store.set_setting("overlay_on_top", "1" if self._on_top_cb.isChecked() else "0")

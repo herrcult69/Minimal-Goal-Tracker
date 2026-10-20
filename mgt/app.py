@@ -97,6 +97,7 @@ class Application:
         self.controller = PomodoroController(
             focus_minutes=_minutes(self.store.setting("pomodoro_focus_min"), 25),
             break_minutes=_minutes(self.store.setting("pomodoro_break_min"), 5),
+            auto_start=self.store.setting("pomodoro_auto_start", "0") == "1",
         )
 
         styles.apply(qapp)
@@ -113,6 +114,7 @@ class Application:
         self._build_tray()
         # Resolved after the tray exists so the tray tier can win (§11.3).
         self.notifier = notify.Notifier(tray=self.tray, overlay=self.overlay)
+        self.controller.completed.connect(self._on_phase_completed)
         self.reminders = self._build_reminders()
 
     # --- startup ----------------------------------------------------------
@@ -231,6 +233,21 @@ class Application:
     def _top_title(self) -> Optional[str]:
         titles = self.store.top_goal_titles(1)
         return titles[0] if titles else None
+
+    # --- notifications on phase completion --------------------------------
+
+    def _on_phase_completed(self, finished: str) -> None:
+        """Announce the ended phase and what happens next (§11.3 tiers)."""
+        from . import notify
+        from .pomodoro import BREAK, FOCUS
+
+        labels = {FOCUS: "Focus", BREAK: "Break"}
+        next_mode = BREAK if finished == FOCUS else FOCUS
+        verb = "started" if self.controller.auto_start else "ready"
+        self.notifier.notify(
+            notify.TITLE,
+            f"{labels[finished]} session complete — {labels[next_mode]} {verb}",
+        )
 
     def _on_window_destroyed(self, *_args: Any) -> None:
         self.window = None
