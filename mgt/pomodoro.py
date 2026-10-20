@@ -47,11 +47,13 @@ class PomodoroController(QObject):
         break_minutes: int = 5,
         parent: Optional[QObject] = None,
         now: Callable[[], float] = time.monotonic,
+        auto_start: bool = False,
     ) -> None:
         super().__init__(parent)
         self._now = now
         self._focus_s = _clamp_minutes(focus_minutes, _MAX_FOCUS_MIN) * 60
         self._break_s = _clamp_minutes(break_minutes, _MAX_BREAK_MIN) * 60
+        self._auto_start = bool(auto_start)
         self._mode = FOCUS
         self._running = False
         self._remaining = float(self._focus_s)  # seconds while idle or paused
@@ -80,6 +82,15 @@ class PomodoroController(QObject):
     @property
     def remaining_seconds(self) -> int:
         return self._display_seconds()
+
+    @property
+    def auto_start(self) -> bool:
+        """When true, a completed phase rolls straight into the next one."""
+        return self._auto_start
+
+    @auto_start.setter
+    def auto_start(self, value: bool) -> None:
+        self._auto_start = bool(value)
 
     # --- control ----------------------------------------------------------
 
@@ -184,4 +195,6 @@ class PomodoroController(QObject):
         self._remaining = float(self._duration(self._mode))
         self._emit_tick(force=True)          # show the new phase's full time
         self.state_changed.emit(False, self._mode)
-        self.completed.emit(finished)        # do NOT auto-start the next phase
+        self.completed.emit(finished)
+        if self._auto_start:
+            self.start()                     # roll straight into the next phase

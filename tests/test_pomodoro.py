@@ -194,6 +194,66 @@ def test_break_completion_returns_to_focus(ctl, clock):
     assert ctl.remaining_seconds == 1500
 
 
+# --- auto-cycle -----------------------------------------------------------
+
+@pytest.fixture()
+def auto_ctl(clock):
+    return PomodoroController(
+        focus_minutes=25, break_minutes=5, now=clock.now, auto_start=True
+    )
+
+
+def test_auto_start_defaults_off(ctl):
+    assert ctl.auto_start is False
+
+
+def test_auto_start_property_setter(clock):
+    c = PomodoroController(now=clock.now)
+    assert c.auto_start is False
+    c.auto_start = True
+    assert c.auto_start is True
+    c.auto_start = 0
+    assert c.auto_start is False
+
+
+def test_focus_completion_autostarts_break(auto_ctl, clock):
+    rec = Recorder(auto_ctl)
+    auto_ctl.start()
+    clock.advance(1500.0)
+    auto_ctl._on_timeout()
+    assert rec.completed == [FOCUS]
+    assert auto_ctl.current_mode == BREAK
+    assert auto_ctl.is_running is True            # rolled straight into break
+    assert auto_ctl.remaining_seconds == 300
+    assert rec.ticks[-1] == ("05:00", 300)
+    # idle-state flip, then the immediate start of the next phase
+    assert rec.states == [(True, FOCUS), (False, BREAK), (True, BREAK)]
+
+
+def test_break_completion_autostarts_focus(auto_ctl, clock):
+    rec = Recorder(auto_ctl)
+    auto_ctl.start()
+    clock.advance(1500.0)
+    auto_ctl._on_timeout()                        # focus -> break (started)
+    clock.advance(300.0)
+    auto_ctl._on_timeout()                        # break -> focus (started)
+    assert rec.completed == [FOCUS, BREAK]
+    assert auto_ctl.current_mode == FOCUS
+    assert auto_ctl.is_running is True
+    assert auto_ctl.remaining_seconds == 1500
+    assert rec.states[-1] == (True, FOCUS)
+
+
+def test_auto_start_can_be_flipped_off_mid_run(auto_ctl, clock):
+    rec = Recorder(auto_ctl)
+    auto_ctl.auto_start = False
+    auto_ctl.start()
+    clock.advance(1500.0)
+    auto_ctl._on_timeout()
+    assert rec.completed == [FOCUS]
+    assert auto_ctl.is_running is False           # halts like a non-auto controller
+
+
 # --- reset ----------------------------------------------------------------
 
 def test_reset_refills_current_phase(ctl, clock):

@@ -8,22 +8,81 @@ check-in notifications. Near-zero idle cost; lives in the system tray.
 Primary target is **Windows 10/11**; the same code also runs on Linux/X11
 (Wayland via XWayland) — see [Platform notes](#platform-notes).
 
-## Run
+## Setup & Installation
 
-Requirements: [uv](https://docs.astral.sh/uv/); Python >= 3.12 (uv fetches it automatically).
+### 1. Prerequisites
+- **OS**: Windows 10/11 (or Linux/X11)
+- **uv**: Modern, extremely fast Python package manager. If not yet installed:
+  ```powershell
+  # Windows (PowerShell):
+  powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+  # or via WinGet:
+  winget install astral-sh.uv
+  ```
+  *(Python >= 3.12 is fetched and managed automatically by `uv`).*
 
+### 2. Clone & Sync Dependencies
 ```bash
-uv sync                              # create .venv and install PyQt6
-uv run python main.py                # main window + overlay + tray
-uv run python main.py --minimized    # start hidden (overlay + tray only)
-uv run python main.py --version
+git clone git@github.com:herrcult69/Minimal-Goal-Tracker.git
+cd Minimal-Goal-Tracker
+
+# Create the virtual environment and install all dependencies:
+uv sync
+
+# (Optional) Install Windows toast notification support:
+uv sync --extra toast
 ```
 
-Diagnostics — headless, opens no windows:
+## Running the App
 
-```bash
-uv run python main.py --doctor
-```
+- **Standard Launch** (interactive main window + floating desktop overlay + system tray):
+  ```bash
+  uv run python main.py
+  ```
+- **Silent Boot / Minimized** (starts hidden into system tray and floating overlay only):
+  ```bash
+  uv run python main.py --minimized
+  ```
+- **Detached Launch (No Terminal)**:
+  Double-click `launch.vbs` or run:
+  ```powershell
+  wscript.exe //B launch.vbs
+  ```
+- **Headless Diagnostics** (checks environment, DPI, tray, and display without opening any windows):
+  ```bash
+  uv run python main.py --doctor
+  uv run python main.py --version
+  ```
+
+## Global Command Shortcut (`mgt`)
+
+To start or control MGT from any command prompt or PowerShell window without navigating to the repository folder:
+
+1. Copy or create a launcher script named `mgt.cmd` inside any folder on your system `PATH` (such as `%LOCALAPPDATA%\Microsoft\WinGet\Links\` or `%USERPROFILE%\.local\bin\`):
+   ```bat
+   @echo off
+   set "SCRIPT_DIR=P:\path\to\Minimal-Goal-Tracker"
+
+   if "%~1"=="--doctor" goto console
+   if "%~1"=="--version" goto console
+   if "%~1"=="-v" goto console
+   if "%~1"=="--help" goto console
+   if "%~1"=="-h" goto console
+
+   wscript.exe //B "%SCRIPT_DIR%\launch.vbs" %*
+   goto :eof
+
+   :console
+   pushd "%SCRIPT_DIR%"
+   "%SCRIPT_DIR%\.venv\Scripts\python.exe" "%SCRIPT_DIR%\main.py" %*
+   popd
+   ```
+2. You can then simply type:
+   ```powershell
+   mgt              # Launches MGT silently in the background
+   mgt --minimized  # Starts to tray/overlay only
+   mgt --doctor     # Runs diagnostics directly in terminal
+   ```
 
 ## Autostart
 

@@ -102,8 +102,10 @@ def _windows_vbs_content() -> str:
     cmd = subprocess.list2cmdline(command())
     # Escape double quotes for VBS string literal: double each double quote.
     cmd_escaped = cmd.replace('"', '""')
+    repo_dir = str(script_path().parent).replace('"', '""')
     return f'''\
 Set WshShell = CreateObject("WScript.Shell")
+WshShell.CurrentDirectory = "{repo_dir}"
 WshShell.Run "{cmd_escaped}", 0, False
 '''
 
@@ -142,7 +144,7 @@ def enable() -> None:
         # Generate a silent VBS launcher so no terminal flashes at system boot.
         vbs_path = _windows_vbs_path()
         vbs_path.parent.mkdir(parents=True, exist_ok=True)
-        vbs_path.write_text(_windows_vbs_content(), encoding="utf-8-sig")
+        vbs_path.write_text(_windows_vbs_content(), encoding="utf-8")
 
         # Register wscript.exe //B with the VBS launcher.
         # //B runs in batch mode (no alerts), window style 0 ensures no console.

@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS settings (
 _DEFAULTS = {
     "pomodoro_focus_min": "25",
     "pomodoro_break_min": "5",
+    "pomodoro_auto_start": "0",
     "overlay_enabled": "1",
     "overlay_on_top": "1",
     "reminders_enabled": "1",
