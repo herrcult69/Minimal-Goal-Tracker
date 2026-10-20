@@ -188,6 +188,59 @@ def disable() -> None:
     desktop_path().unlink(missing_ok=True)
 
 
+def install_cli() -> Optional[Path]:
+    """Install global 'mgt' command into a user PATH directory."""
+    import os
+
+    repo_dir = str(script_path().parent)
+
+    if osenv.IS_WINDOWS:
+        candidate_dirs = [
+            Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "WinGet" / "Links",
+            Path.home() / ".local" / "bin",
+            Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Python" / "Launcher",
+        ]
+        path_env = os.environ.get("PATH", "").split(os.pathsep)
+        chosen_dir = None
+        for cand in candidate_dirs:
+            if any(str(cand).lower() == p.strip().lower() for p in path_env):
+                chosen_dir = cand
+                break
+        if chosen_dir is None:
+            chosen_dir = candidate_dirs[0]
+
+        chosen_dir.mkdir(parents=True, exist_ok=True)
+        cmd_path = chosen_dir / "mgt.cmd"
+        cmd_content = f'''@echo off
+set "SCRIPT_DIR={repo_dir}"
+if "%~1"=="--doctor" goto console
+if "%~1"=="--version" goto console
+if "%~1"=="-v" goto console
+if "%~1"=="--help" goto console
+if "%~1"=="-h" goto console
+
+wscript.exe //B "%SCRIPT_DIR%\\launch.vbs" %*
+goto :eof
+
+:console
+pushd "%SCRIPT_DIR%"
+"%SCRIPT_DIR%\\.venv\\Scripts\\python.exe" "%SCRIPT_DIR%\\main.py" %*
+popd
+'''
+        cmd_path.write_text(cmd_content, encoding="ascii")
+        return cmd_path
+    else:
+        bin_dir = Path.home() / ".local" / "bin"
+        bin_dir.mkdir(parents=True, exist_ok=True)
+        sh_path = bin_dir / "mgt"
+        sh_content = f'''#!/bin/sh
+exec "{repo_dir}/.venv/bin/python" "{repo_dir}/main.py" "$@"
+'''
+        sh_path.write_text(sh_content, encoding="utf-8")
+        sh_path.chmod(0o755)
+        return sh_path
+
+
 def status_line() -> str:
     if not is_supported():
         return f"autostart: {unsupported_reason().lower()}"
@@ -208,6 +261,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(status_line())
         return 0
 
+    if "--install-cli" in args:
+        target = install_cli()
+        print(f"cli: installed ({target})")
+        return 0
+
     wanted = None
     if "--enable" in args:
         wanted = True
@@ -215,11 +273,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         wanted = False
 
     if wanted is None:
-        print("usage: python -m mgt.startup --enable | --disable | --status")
+        print("usage: python -m mgt.startup --enable | --disable | --status | --install-cli")
         return 2
 
     try:
-        enable() if wanted else disable()
+        if wanted:
+            enable()
+            install_cli()
+        else:
+            disable()
     except Exception as exc:  # noqa: BLE001 - CLI reports, never tracebacks
         print(f"autostart: failed ({exc})")
         return 1

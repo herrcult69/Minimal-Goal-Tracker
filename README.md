@@ -58,31 +58,18 @@ uv sync --extra toast
 
 To start or control MGT from any command prompt or PowerShell window without navigating to the repository folder:
 
-1. Copy or create a launcher script named `mgt.cmd` inside any folder on your system `PATH` (such as `%LOCALAPPDATA%\Microsoft\WinGet\Links\` or `%USERPROFILE%\.local\bin\`):
-   ```bat
-   @echo off
-   set "SCRIPT_DIR=P:\path\to\Minimal-Goal-Tracker"
+Run the automated installer:
+```bash
+uv run python -m mgt.startup --install-cli
+```
+*(This automatically creates `mgt.cmd` in an existing user directory on your system `PATH`, such as `WinGet\Links` or `~/.local/bin`).*
 
-   if "%~1"=="--doctor" goto console
-   if "%~1"=="--version" goto console
-   if "%~1"=="-v" goto console
-   if "%~1"=="--help" goto console
-   if "%~1"=="-h" goto console
-
-   wscript.exe //B "%SCRIPT_DIR%\launch.vbs" %*
-   goto :eof
-
-   :console
-   pushd "%SCRIPT_DIR%"
-   "%SCRIPT_DIR%\.venv\Scripts\python.exe" "%SCRIPT_DIR%\main.py" %*
-   popd
-   ```
-2. You can then simply type:
-   ```powershell
-   mgt              # Launches MGT silently in the background
-   mgt --minimized  # Starts to tray/overlay only
-   mgt --doctor     # Runs diagnostics directly in terminal
-   ```
+You can then simply run from anywhere:
+```powershell
+mgt              # Launches MGT silently in the background
+mgt --minimized  # Starts to tray/overlay only
+mgt --doctor     # Runs diagnostics directly in terminal
+```
 
 ## Autostart
 
